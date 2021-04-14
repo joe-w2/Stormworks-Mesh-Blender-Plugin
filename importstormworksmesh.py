@@ -10,6 +10,8 @@ from .vertex import Vertex
 
 
 class ImportStormworksMesh(Operator, ImportHelper):
+    """Import Stormworks Mesh"""
+
     bl_idname = "stormworks_mesh_importer.mesh_data"
     bl_label = "Import Mesh"
 
@@ -83,7 +85,7 @@ class ImportStormworksMesh(Operator, ImportHelper):
             for loopIndex in poly.loop_indices:
                 vertexIndex = mesh_data.loops[loopIndex].vertex_index
                 colourLayer.data[loopIndex].color = vertices[vertexIndex].r / 255, vertices[vertexIndex].g / 255, \
-                                                    vertices[vertexIndex].b / 255, vertices[vertexIndex].a / 255
+                                                    vertices[vertexIndex].b / 255, vertices[vertexIndex].a
 
         obj = bpy.data.objects.new(mesh_data.name, mesh_data)
 

@@ -32,6 +32,8 @@ def findNormal(p1: Tuple[float, float, float], p2: Tuple[float, float, float],
 
 
 class ImportStormworksBlock(Operator, ImportHelper):
+    """Import Stormworks Block"""
+
     bl_idname = "stormworks_block_importer.block_data"
     bl_label = "Import Block"
 
@@ -53,15 +55,11 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
         block = Block(parsedContent)
 
-        print(block.meshname)
-
         if block.meshname != "":
             meshpath = os.path.join(meshfolder, block.meshname)
             vertices, faces = ImportStormworksMesh.read_mesh(meshpath)
 
             ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
-
-        print(block.surfaces)
 
         for surface in block.surfaces:
             extrafaces = SHAPES[surface.shape]
@@ -84,8 +82,6 @@ class ImportStormworksBlock(Operator, ImportHelper):
             for face in extrafaces:
                 for i in range(3):
                     position, normal = face[i]
-
-                    print(position, normal)
 
                     vertex = Vertex(*position, 255, 255, 255, 255, *normal)
 

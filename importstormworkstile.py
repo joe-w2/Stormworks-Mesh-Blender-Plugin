@@ -13,6 +13,8 @@ from .tile import Tile
 
 
 class ImportStormworksTile(Operator, ImportHelper):
+    """Import Stormworks Tile"""
+
     bl_idname = "stormworks_tile_importer.tile_data"
     bl_label = "Import Tile"
 

@@ -9,6 +9,8 @@ from bpy_extras.io_utils import ExportHelper
 
 
 class ExportStormworksMesh(Operator, ExportHelper):
+    """Export Stormworks Mesh"""
+
     bl_idname = "stormworks_mesh_exporter.mesh_data"
     bl_label = "Export Mesh"
 
@@ -62,10 +64,10 @@ class ExportStormworksMesh(Operator, ExportHelper):
             if i < len(colourMap):
                 colour = *map(lambda a: a * 255, colourMap[i]),
 
-            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.co.x, vertex.co.y, vertex.co.z)
+            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.co.x, vertex.co.z, vertex.co.y)
             bytestring = ExportStormworksMesh._put(bytestring, "BBBB", *colour)
-            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.normal.x, vertex.normal.y,
-                                                   vertex.normal.z)
+            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.normal.x, vertex.normal.z,
+                                                   vertex.normal.y)
 
         bytestring = ExportStormworksMesh._put(bytestring, "I", len(bm.faces) * 3)
 
@@ -82,7 +84,7 @@ class ExportStormworksMesh(Operator, ExportHelper):
     @staticmethod
     def export_mesh(context, filepath: str) -> None:
         print(f"Exporting to {filepath}")
-        ExportStormworksMesh.writeMesh(filepath)
+        ExportStormworksMesh.write_mesh(filepath)
         print(f"Finished Exporting")
 
     def execute(self, context) -> Set[str]:
