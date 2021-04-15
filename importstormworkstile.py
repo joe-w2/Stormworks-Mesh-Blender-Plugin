@@ -50,7 +50,7 @@ class ImportStormworksTile(Operator, ImportHelper):
                 vertex.nx, vertex.ny, vertex.nz, _ = *pos2,
                 vertex.x *= -1
 
-            ImportStormworksMesh.add_mesh(mesh.meshId, vertices, faces)
+            ImportStormworksMesh.add_mesh(mesh.mesh_id, vertices, faces)
 
     @staticmethod
     def import_tile(context, filepath: str) -> None:

@@ -43,12 +43,12 @@ class ImportStormworksMesh(Operator, ImportHelper):
         assert bytestring.startswith(b"mesh\x07\x00\x01\x00") and bytestring.endswith(b"\x00\x00")
 
         bytestring = ImportStormworksMesh._skip(bytestring, 8)
-        bytestring, (vertexCount,) = ImportStormworksMesh._get(bytestring, "H")
+        bytestring, (vertex_count,) = ImportStormworksMesh._get(bytestring, "H")
         bytestring = ImportStormworksMesh._skip(bytestring, 4)
 
         vertices = []
 
-        for i in range(vertexCount):
+        for i in range(vertex_count):
             bytestring, position = ImportStormworksMesh._get(bytestring, "fff")
 
             bytestring, colour = ImportStormworksMesh._get(bytestring, "BBBB")
@@ -58,12 +58,12 @@ class ImportStormworksMesh(Operator, ImportHelper):
             vertex = Vertex(*position, *colour, *normal)
             vertices.append(vertex)
 
-        bytestring, (triangleCount,) = ImportStormworksMesh._get(bytestring, "I")
-        triangleCount = triangleCount // 3
+        bytestring, (triangle_count,) = ImportStormworksMesh._get(bytestring, "I")
+        triangle_count = triangle_count // 3
 
         faces = []
 
-        for i in range(triangleCount):
+        for i in range(triangle_count):
             bytestring, points = ImportStormworksMesh._get(bytestring, "HHH")
 
             faces.append(points)
@@ -74,18 +74,19 @@ class ImportStormworksMesh(Operator, ImportHelper):
     def add_mesh(name, vertices: List[Vertex], faces: List[Tuple[int, int, int]]) -> None:
         mesh_data = bpy.data.meshes.new(name)
 
-        verticesAsTupleList = list(map(lambda a: (a.x, a.y, a.z), vertices))
+        vertices_as_tuple_list = list(map(lambda a: (a.x, a.y, a.z), vertices))
 
-        mesh_data.from_pydata(verticesAsTupleList, [], faces)
+        mesh_data.from_pydata(vertices_as_tuple_list, [], faces)
         mesh_data.update()
 
-        colourLayer = mesh_data.vertex_colors.new(name="Colour Layer")
+        colour_layer = mesh_data.vertex_colors.new(name="Colour Layer")
 
         for poly in mesh_data.polygons:
-            for loopIndex in poly.loop_indices:
-                vertexIndex = mesh_data.loops[loopIndex].vertex_index
-                colourLayer.data[loopIndex].color = vertices[vertexIndex].r / 255, vertices[vertexIndex].g / 255, \
-                                                    vertices[vertexIndex].b / 255, vertices[vertexIndex].a
+            for loop_index in poly.loop_indices:
+                vertex_index = mesh_data.loops[loop_index].vertex_index
+
+                colour_layer.data[loop_index].color = vertices[vertex_index].r / 255, vertices[vertex_index].g / 255, \
+                                                      vertices[vertex_index].b / 255, vertices[vertex_index].a / 255
 
         obj = bpy.data.objects.new(mesh_data.name, mesh_data)
 

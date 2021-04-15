@@ -4,7 +4,7 @@ from typing import List, Tuple
 import numpy as np
 
 
-def rotationMatrix(axis: np.array, theta: float) -> np.array:
+def create_rotation_matrix(axis: np.array, theta: float) -> np.array:
     axis = np.asarray(axis)
     axis = axis / math.sqrt(np.dot(axis, axis))
     a = math.cos(theta / 2.0)
@@ -47,11 +47,14 @@ class Vertex:
             axis, angle = transformation
 
             vector = np.array([self.x, self.y, self.z])
+            vector2 = np.array([self.nx, self.ny, self.nz])
 
-            matrix = rotationMatrix(axis, angle)
+            matrix = create_rotation_matrix(axis, angle)
 
             out = matrix.dot(vector)
+            out2 = matrix.dot(vector2)
 
             self.x, self.y, self.z = *out,
+            self.nx, self.ny, self.nz = *out2,
 
         self.x, self.y, self.z = self.x + offset[0] * 0.25, self.y + offset[1] * 0.25, self.z + offset[2] * 0.25

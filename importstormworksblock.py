@@ -61,10 +61,19 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
             ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
 
+        for mesh in block.extra_meshes:
+            if mesh == "":
+                break
+
+            meshpath = os.path.join(meshfolder, mesh)
+            vertices, faces = ImportStormworksMesh.read_mesh(meshpath)
+
+            ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
+
         vertices = []
         faces = []
 
-        indexCount = 0
+        index_count = 0
 
         for surface in block.surfaces:
             extrafaces = SHAPES[surface.shape]
@@ -88,8 +97,8 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
                     vertices.append(vertex)
 
-                faces.append((indexCount, indexCount + 1, indexCount + 2))
-                indexCount += 3
+                faces.append((index_count, index_count + 1, index_count + 2))
+                index_count += 3
 
         ImportStormworksMesh.add_mesh(f"{block.meshname}_surfaces", vertices, faces)
 

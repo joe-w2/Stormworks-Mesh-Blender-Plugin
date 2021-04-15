@@ -1,3 +1,4 @@
+import math
 import struct
 from typing import Set
 
@@ -24,13 +25,13 @@ class ExportStormworksMesh(Operator, ExportHelper):
 
     @staticmethod
     def _put(bytestring: bytes, structure: str, *values: object) -> bytes:
-        packedBytes = struct.pack(structure, *values)
+        packed_bytes = struct.pack(structure, *values)
 
-        return bytestring + packedBytes
+        return bytestring + packed_bytes
 
     @staticmethod
-    def _write(bytestring: bytes, bytestowrite: bytes) -> bytes:
-        return bytestring + bytestowrite
+    def _write(bytestring: bytes, bytes_to_write: bytes) -> bytes:
+        return bytestring + bytes_to_write
 
     @staticmethod
     def write_mesh(filepath: str) -> None:
@@ -43,36 +44,54 @@ class ExportStormworksMesh(Operator, ExportHelper):
         bm = bmesh.new()
         bm.from_mesh(mesh)
 
-        bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method="BEAUTY", ngon_method="BEAUTY")
+        bmesh.ops.triangulate(bm, faces=bm.faces, quad_method="BEAUTY", ngon_method="BEAUTY")
+
+        bm.to_mesh(mesh)
+        bm.free()
+        del bm
 
         bytestring = b"mesh"
 
         bytestring = ExportStormworksMesh._write(bytestring, b"\x07\x00\x01\x00")
-        bytestring = ExportStormworksMesh._put(bytestring, "H", len(bm.verts))
+        bytestring = ExportStormworksMesh._put(bytestring, "H", len(mesh.vertices))
         bytestring = ExportStormworksMesh._write(bytestring, b"\x13\x00\x00\x00")
 
-        colourMap = []
+        colour_layer = None
         if len(mesh.vertex_colors) != 0:
-            colourMap = mesh.vertex_colors[0]
+            colour_layer = mesh.vertex_colors[0].data
 
-        bm.verts.ensure_lookup_table()
+        mesh.calc_loop_triangles()
 
-        for i in range(len(bm.verts)):
-            vertex = bm.verts[i]
+        vertices = [None] * len(mesh.vertices)
+        for triangle in mesh.loop_triangles:
+            for loop_index in triangle.loops:
+                vertex_index = mesh.loops[loop_index].vertex_index
 
-            colour = 255, 255, 255, 255
-            if i < len(colourMap):
-                colour = *map(lambda a: a * 255, colourMap[i]),
+                vertex = mesh.vertices[vertex_index]
 
-            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.co.x, vertex.co.z, vertex.co.y)
+                position = vertex.co
+                normal = vertex.normal
+
+                colour = 255, 255, 255, 255
+                if colour_layer is not None:
+                    colour = *map(lambda a: math.floor(a * 255), colour_layer[loop_index].color),
+
+                vertices[vertex_index] = (position, normal, colour)
+
+        for vertex in vertices:
+            position, normal, colour = *vertex,
+
+            bytestring = ExportStormworksMesh._put(bytestring, "fff", *position)
             bytestring = ExportStormworksMesh._put(bytestring, "BBBB", *colour)
-            bytestring = ExportStormworksMesh._put(bytestring, "fff", vertex.normal.x, vertex.normal.z,
-                                                   vertex.normal.y)
+            bytestring = ExportStormworksMesh._put(bytestring, "fff", *normal)
 
-        bytestring = ExportStormworksMesh._put(bytestring, "I", len(bm.faces) * 3)
+        bytestring = ExportStormworksMesh._put(bytestring, "I", len(mesh.loop_triangles) * 3)
 
-        for triangle in bm.faces:
-            bytestring = ExportStormworksMesh._put(bytestring, "HHH", *map(lambda a: a.index, triangle.verts))
+        for triangle in mesh.loop_triangles:
+            for loop_index in triangle.loops:
+                vertex_index = mesh.loops[loop_index].vertex_index
+
+                bytestring = ExportStormworksMesh._put(bytestring, "H", vertex_index)
 
         bytestring = ExportStormworksMesh._put(bytestring, "I", 0)
 

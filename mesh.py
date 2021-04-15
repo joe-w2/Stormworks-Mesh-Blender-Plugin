@@ -4,17 +4,17 @@ from .transformation import Transformation
 
 
 class Mesh:
-    meshId: str
+    mesh_id: str
     filename: str
-    seasonalFlags: str
+    seasonal_flags: str
     transformation: Transformation
 
     def __init__(self, xml: ET.Element) -> None:
         attributes = xml.attrib
 
-        self.meshId = attributes["id"]
+        self.mesh_id = attributes["id"]
         self.filename = attributes["file_name"].replace("meshes/", "")
-        self.seasonalFlags = attributes["seasonal_flags"]
+        self.seasonal_flags = attributes["seasonal_flags"]
 
         transformation = xml.find("transform")
 

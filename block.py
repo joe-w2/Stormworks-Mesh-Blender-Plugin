@@ -8,13 +8,17 @@ from .surface import Surface
 class Block:
     surfaces: List[Surface]
     meshname: str
+    extra_meshes: List[str] = []
 
     def __init__(self, xml: ET.Element) -> None:
         attributes = xml.attrib
         self.meshname = remove_prefix(attributes["mesh_data_name"], "meshes/")
 
-        if self.meshname == "component_robotic_pivot_b_no_trans.mesh":
-            self.meshname = "assets_meshes_component_robotic_pivot_b_no_trans.mesh"
+        for i in range(2):
+            try:
+                self.extra_meshes.append(remove_prefix(attributes[f"mesh_{i}_name"], "meshes/"))
+            except IndexError:
+                pass
 
         self.surfaces = []
         for surface in xml.find("surfaces"):
