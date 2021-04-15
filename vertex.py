@@ -30,16 +30,16 @@ class Vertex:
 
     def __init__(self, x: float, y: float, z: float, r: float, g: float, b: float, a: float, nx: float, ny: float,
                  nz: float) -> None:
-        self.z = z
-        self.y = y
         self.x = x
+        self.y = y
+        self.z = z
         self.r = r
         self.g = g
         self.b = b
         self.a = a
         self.nx = nx
-        self.nz = nz
         self.ny = ny
+        self.nz = nz
 
     def transform(self, transformations: List[Tuple[Tuple[float, float, float], float]],
                   offset: Tuple[float, float, float]) -> None:

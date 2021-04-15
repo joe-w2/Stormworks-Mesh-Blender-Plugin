@@ -16,7 +16,7 @@ from .vertex import Vertex
 
 
 def findNormal(p1: Tuple[float, float, float], p2: Tuple[float, float, float],
-               p3: Tuple[float, float, float], ) -> Tuple[float, float, float]:
+               p3: Tuple[float, float, float]) -> Tuple[float, float, float]:
     p1 = np.array(p1)
     p2 = np.array(p2)
     p3 = np.array(p3)
@@ -61,6 +61,11 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
             ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
 
+        vertices = []
+        faces = []
+
+        indexCount = 0
+
         for surface in block.surfaces:
             extrafaces = SHAPES[surface.shape]
 
@@ -69,23 +74,16 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
             transformations = TRANSFORMATIONS[surface.orientation]
 
-            triangle = extrafaces[0]
-
-            x, y, z = findNormal(*map(lambda a: a[0], triangle))
-
-            transformation = [((x, y, z), surface.rotation / 2 * math.pi)]
-
-            vertices = []
-            faces = []
-
-            indexCount = 0
             for face in extrafaces:
+                transformation = [((1, 0, 0), surface.rotation / 2 * math.pi)]
+
                 for i in range(3):
                     position, normal = face[i]
-
                     vertex = Vertex(*position, 255, 255, 255, 255, *normal)
 
-                    vertex.transform(transformation, (0, 0, 0))
+                    if surface.rotation != 0:
+                        vertex.transform(transformation, (0, 0, 0))
+
                     vertex.transform(transformations, surface.position)
 
                     vertices.append(vertex)
@@ -93,7 +91,7 @@ class ImportStormworksBlock(Operator, ImportHelper):
                 faces.append((indexCount, indexCount + 1, indexCount + 2))
                 indexCount += 3
 
-                ImportStormworksMesh.add_mesh(f"surface_{surface.shape}", vertices, faces)
+        ImportStormworksMesh.add_mesh(f"{block.meshname}_surfaces", vertices, faces)
 
     @staticmethod
     def import_tile(context, filepath: str) -> None:
