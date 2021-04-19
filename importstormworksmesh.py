@@ -106,7 +106,7 @@ class ImportStormworksMesh(Operator, ImportHelper):
 
         mesh_data.update()
 
-        colour_layer = mesh_data.vertex_colors.new(name="Colour Layer")
+        colour_layer = mesh_data.vertex_colors.new(name="Col")
 
         for poly in mesh_data.polygons:
             for loop_index in poly.loop_indices:

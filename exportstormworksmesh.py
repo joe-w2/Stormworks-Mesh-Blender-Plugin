@@ -85,6 +85,8 @@ class ExportStormworksMesh(Operator, ExportHelper):
 
                 vertices[vertex_index] = [position, normal, colour]
 
+        assert len(vertices) <= 2 ^ 16
+
         bytestring = ExportStormworksMesh._put(bytestring, "H", len(vertices))
         bytestring = ExportStormworksMesh._write(bytestring, b"\x13\x00\x00\x00")
 
@@ -103,6 +105,8 @@ class ExportStormworksMesh(Operator, ExportHelper):
             bytestring = ExportStormworksMesh._put(bytestring, "BBBB", *colour)
             bytestring = ExportStormworksMesh._put(bytestring, "fff", *normal)
 
+        assert len(mesh.loop_triangles) * 3 <= 2 ^ 32
+
         bytestring = ExportStormworksMesh._put(bytestring, "I", len(mesh.loop_triangles) * 3)
 
         for triangle in mesh.loop_triangles:
@@ -111,6 +115,13 @@ class ExportStormworksMesh(Operator, ExportHelper):
 
                 bytestring = ExportStormworksMesh._put(bytestring, "H", vertex_index)
 
+        for i in range(3):
+            if min_pos[i] == 0:
+                min_pos[i] -= 0.125
+
+            if max_pos[i] == 0:
+                max_pos[i] += 0.125
+
         bytestring = ExportStormworksMesh._put(bytestring, "H", 1)
 
         bytestring = ExportStormworksMesh._put(bytestring, "II", 0, len(mesh.loop_triangles) * 3)
@@ -118,9 +129,6 @@ class ExportStormworksMesh(Operator, ExportHelper):
         bytestring = ExportStormworksMesh._write(bytestring, b"\x00\x00")
 
         bytestring = ExportStormworksMesh._put(bytestring, "H", 0)
-
-        min_pos = [-0.125, 0.125, -0.125]
-        max_pos = [0.125, 0.125, 0.125]
 
         bytestring = ExportStormworksMesh._put(bytestring, "fff", *min_pos)
         bytestring = ExportStormworksMesh._put(bytestring, "fff", *max_pos)
