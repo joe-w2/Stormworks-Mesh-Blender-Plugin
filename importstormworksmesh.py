@@ -68,6 +68,24 @@ class ImportStormworksMesh(Operator, ImportHelper):
 
             faces.append(points)
 
+        bytestring, (submesh_count,) = ImportStormworksMesh._get(bytestring, "H")
+
+        for i in range(submesh_count):
+            bytestring, (vertexStartIndex, vertexCount) = ImportStormworksMesh._get(bytestring, "II")
+            endIndex = vertexStartIndex + vertexCount
+
+            bytestring = ImportStormworksMesh._skip(bytestring, 2)
+
+            bytestring, (shader,) = ImportStormworksMesh._get(bytestring, "H")
+
+            bytestring, culling_min = ImportStormworksMesh._get(bytestring, "fff")
+
+            bytestring, culling_max = ImportStormworksMesh._get(bytestring, "fff")
+
+            ImportStormworksMesh._skip(bytestring, 19)
+
+        ImportStormworksMesh._skip(bytestring, 2)
+
         return vertices, faces
 
     @staticmethod
@@ -77,6 +95,15 @@ class ImportStormworksMesh(Operator, ImportHelper):
         vertices_as_tuple_list = list(map(lambda a: (a.x, a.y, a.z), vertices))
 
         mesh_data.from_pydata(vertices_as_tuple_list, [], faces)
+
+        normals = [None] * len(mesh_data.vertices)
+        for loop in mesh_data.loops:
+            vertex = vertices[loop.vertex_index]
+            normals[loop.vertex_index] = (vertex.nx, vertex.ny, vertex.nz)
+
+        mesh_data.normals_split_custom_set_from_vertices(normals)
+        mesh_data.use_auto_smooth = True
+
         mesh_data.update()
 
         colour_layer = mesh_data.vertex_colors.new(name="Colour Layer")

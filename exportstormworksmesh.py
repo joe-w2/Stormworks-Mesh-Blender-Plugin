@@ -1,4 +1,3 @@
-import math
 import struct
 from typing import Set
 
@@ -48,13 +47,8 @@ class ExportStormworksMesh(Operator, ExportHelper):
 
         bm.to_mesh(mesh)
         bm.free()
-        del bm
 
-        bytestring = b"mesh"
-
-        bytestring = ExportStormworksMesh._write(bytestring, b"\x07\x00\x01\x00")
-        bytestring = ExportStormworksMesh._put(bytestring, "H", len(mesh.vertices))
-        bytestring = ExportStormworksMesh._write(bytestring, b"\x13\x00\x00\x00")
+        bytestring = b"mesh\x07\x00\x01\x00"
 
         colour_layer = None
         if len(mesh.vertex_colors) != 0:
@@ -65,23 +59,47 @@ class ExportStormworksMesh(Operator, ExportHelper):
         vertices = [None] * len(mesh.vertices)
         for triangle in mesh.loop_triangles:
             for loop_index in triangle.loops:
-                vertex_index = mesh.loops[loop_index].vertex_index
+                loop = mesh.loops[loop_index]
+                vertex_index = loop.vertex_index
 
                 vertex = mesh.vertices[vertex_index]
 
                 position = vertex.co
-                normal = vertex.normal
 
                 colour = 255, 255, 255, 255
                 if colour_layer is not None:
-                    colour = *map(lambda a: math.floor(a * 255), colour_layer[loop_index].color),
+                    colour = *map(lambda a: int(a * 255), colour_layer[loop_index].color),
 
-                vertices[vertex_index] = (position, normal, colour)
+                vertices[vertex_index] = [position, None, colour]
+
+        mesh.calc_normals_split()
+
+        for triangle in mesh.loop_triangles:
+            for loop_index in triangle.loops:
+                loop = mesh.loops[loop_index]
+                vertex_index = loop.vertex_index
+
+                position, _, colour = *vertices[vertex_index],
+
+                normal = loop.normal
+
+                vertices[vertex_index] = [position, normal, colour]
+
+        bytestring = ExportStormworksMesh._put(bytestring, "H", len(vertices))
+        bytestring = ExportStormworksMesh._write(bytestring, b"\x13\x00\x00\x00")
+
+        min_pos = [0, 0, 0]
+        max_pos = [0, 0, 0]
 
         for vertex in vertices:
-            position, normal, colour = *vertex,
+            position, normal, colour = vertex
+
+            for i in range(3):
+                min_pos[i] = min(min_pos[i], position[i])
+                max_pos[i] = max(max_pos[i], position[i])
 
             bytestring = ExportStormworksMesh._put(bytestring, "fff", *position)
+
             bytestring = ExportStormworksMesh._put(bytestring, "BBBB", *colour)
             bytestring = ExportStormworksMesh._put(bytestring, "fff", *normal)
 
@@ -93,7 +111,24 @@ class ExportStormworksMesh(Operator, ExportHelper):
 
                 bytestring = ExportStormworksMesh._put(bytestring, "H", vertex_index)
 
-        bytestring = ExportStormworksMesh._put(bytestring, "I", 0)
+        bytestring = ExportStormworksMesh._put(bytestring, "H", 1)
+
+        bytestring = ExportStormworksMesh._put(bytestring, "II", 0, len(mesh.loop_triangles) * 3)
+
+        bytestring = ExportStormworksMesh._write(bytestring, b"\x00\x00")
+
+        bytestring = ExportStormworksMesh._put(bytestring, "H", 0)
+
+        min_pos = [-0.125, 0.125, -0.125]
+        max_pos = [0.125, 0.125, 0.125]
+
+        bytestring = ExportStormworksMesh._put(bytestring, "fff", *min_pos)
+        bytestring = ExportStormworksMesh._put(bytestring, "fff", *max_pos)
+
+        # No idea what these bytes do so yeah
+        bytestring = ExportStormworksMesh._write(bytestring,
+                                                 b"\x00\x00\x03\x00\x49\x44\x30\x00\x00\x80\x3F\x00\x00\x80\x3F\x00\x00"
+                                                 b"\x80\x3F")
 
         bytestring = ExportStormworksMesh._write(bytestring, b"\x00\x00")
 
