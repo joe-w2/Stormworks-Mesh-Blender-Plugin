@@ -38,7 +38,7 @@ class ImportStormworksTile(Operator, ImportHelper):
 
         for mesh in tile.meshes:
             filepath = os.path.join(meshfolder, mesh.filename)
-            vertices, faces = ImportStormworksMesh.read_mesh(filepath)
+            vertices, faces, submeshes = ImportStormworksMesh.read_mesh(filepath)
 
             for vertex in vertices:
                 matrix = mesh.transformation.matrix
@@ -50,7 +50,7 @@ class ImportStormworksTile(Operator, ImportHelper):
                 vertex.nx, vertex.ny, vertex.nz, _ = *pos2,
                 vertex.x *= -1
 
-            ImportStormworksMesh.add_mesh(mesh.mesh_id, vertices, faces)
+            ImportStormworksMesh.add_mesh(mesh.mesh_id, vertices, faces, submeshes)
 
     @staticmethod
     def import_tile(context, filepath: str) -> None:

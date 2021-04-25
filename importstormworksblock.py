@@ -57,18 +57,18 @@ class ImportStormworksBlock(Operator, ImportHelper):
 
         if block.meshname != "":
             meshpath = os.path.join(meshfolder, block.meshname)
-            vertices, faces = ImportStormworksMesh.read_mesh(meshpath)
+            vertices, faces, submeshes = ImportStormworksMesh.read_mesh(meshpath)
 
-            ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
+            ImportStormworksMesh.add_mesh(block.meshname, vertices, faces, submeshes)
 
         for mesh in block.extra_meshes:
             if mesh == "":
                 break
 
             meshpath = os.path.join(meshfolder, mesh)
-            vertices, faces = ImportStormworksMesh.read_mesh(meshpath)
+            vertices, faces, submeshes = ImportStormworksMesh.read_mesh(meshpath)
 
-            ImportStormworksMesh.add_mesh(block.meshname, vertices, faces)
+            ImportStormworksMesh.add_mesh(block.meshname, vertices, faces, submeshes)
 
         vertices = []
         faces = []

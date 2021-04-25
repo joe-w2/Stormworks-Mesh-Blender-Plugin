@@ -80,12 +80,14 @@ class ExportStormworksMesh(Operator, ExportHelper):
                 vertex_index = loop.vertex_index
 
                 position, _, colour = *vertices[vertex_index],
+                position[1], position[2] = position[2], position[1]
 
                 normal = loop.normal
+                normal[1], normal[2] = normal[2], normal[1]
 
                 vertices[vertex_index] = [position, normal, colour]
 
-        assert len(vertices) <= 2 ^ 16
+        assert len(vertices) <= 2 ** 16
 
         bytestring = ExportStormworksMesh._put(bytestring, "H", len(vertices))
         bytestring = ExportStormworksMesh._write(bytestring, b"\x13\x00\x00\x00")
@@ -105,7 +107,7 @@ class ExportStormworksMesh(Operator, ExportHelper):
             bytestring = ExportStormworksMesh._put(bytestring, "BBBB", *colour)
             bytestring = ExportStormworksMesh._put(bytestring, "fff", *normal)
 
-        assert len(mesh.loop_triangles) * 3 <= 2 ^ 32
+        assert len(mesh.loop_triangles) * 3 <= 2 ** 32
 
         bytestring = ExportStormworksMesh._put(bytestring, "I", len(mesh.loop_triangles) * 3)
 

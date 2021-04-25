@@ -6,6 +6,7 @@ from bpy.props import StringProperty
 from bpy_extras.io_utils import ImportHelper
 from bpy_types import Operator
 
+from .submesh import Submesh
 from .vertex import Vertex
 
 
@@ -36,7 +37,7 @@ class ImportStormworksMesh(Operator, ImportHelper):
         return bytestring[size:]
 
     @staticmethod
-    def read_mesh(filepath: str) -> Tuple[List[Vertex], List[Tuple[int, int, int]]]:
+    def read_mesh(filepath: str) -> Tuple[List[Vertex], List[Tuple[int, int, int]], List[Submesh]]:
         with open(filepath, "rb") as file:
             bytestring = file.read()
 
@@ -70,6 +71,8 @@ class ImportStormworksMesh(Operator, ImportHelper):
 
         bytestring, (submesh_count,) = ImportStormworksMesh._get(bytestring, "H")
 
+        submeshes = []
+
         for i in range(submesh_count):
             bytestring, (vertexStartIndex, vertexCount) = ImportStormworksMesh._get(bytestring, "II")
             endIndex = vertexStartIndex + vertexCount
@@ -84,49 +87,72 @@ class ImportStormworksMesh(Operator, ImportHelper):
 
             ImportStormworksMesh._skip(bytestring, 19)
 
+            submesh = Submesh((vertexStartIndex, endIndex), shader)
+            submeshes.append(submesh)
+
         ImportStormworksMesh._skip(bytestring, 2)
 
-        return vertices, faces
+        return vertices, faces, submeshes
 
     @staticmethod
-    def add_mesh(name, vertices: List[Vertex], faces: List[Tuple[int, int, int]]) -> None:
-        mesh_data = bpy.data.meshes.new(name)
+    def add_mesh(name, vertices: List[Vertex], faces: List[Tuple[int, int, int]],
+                 submeshes: List[Submesh] = None) -> None:
 
-        vertices_as_tuple_list = list(map(lambda a: (a.x, a.y, a.z), vertices))
+        if submeshes is None:
+            submeshes = [Submesh((0, len(vertices)), 0)]
 
-        mesh_data.from_pydata(vertices_as_tuple_list, [], faces)
+        for submesh in submeshes:
+            start, end = submesh.vertices
+            vertices_local = vertices[start:end]
 
-        normals = [None] * len(mesh_data.vertices)
-        for loop in mesh_data.loops:
-            vertex = vertices[loop.vertex_index]
-            normals[loop.vertex_index] = (vertex.nx, vertex.ny, vertex.nz)
+            faces_local = []
 
-        mesh_data.normals_split_custom_set_from_vertices(normals)
-        mesh_data.use_auto_smooth = True
+            for face in faces:
+                for i in range(3):
+                    if start <= face[i] < end:
+                        faces_local.append(face)
+                        break
 
-        mesh_data.update()
+            name_formatted = f"{name}_{submesh.shader}"
 
-        colour_layer = mesh_data.vertex_colors.new(name="Col")
+            root_mesh = bpy.data.meshes.new(name_formatted)
 
-        for poly in mesh_data.polygons:
-            for loop_index in poly.loop_indices:
-                vertex_index = mesh_data.loops[loop_index].vertex_index
+            vertices_as_tuple_list = list(map(lambda a: (a.x, a.z, a.y), vertices_local))
 
-                colour_layer.data[loop_index].color = vertices[vertex_index].r / 255, vertices[vertex_index].g / 255, \
-                                                      vertices[vertex_index].b / 255, vertices[vertex_index].a / 255
+            root_mesh.from_pydata(vertices_as_tuple_list, [], faces_local)
 
-        obj = bpy.data.objects.new(mesh_data.name, mesh_data)
+            normals = [None] * len(root_mesh.vertices)
+            for loop in root_mesh.loops:
+                vertex = vertices_local[loop.vertex_index]
+                normals[loop.vertex_index] = (vertex.nx, vertex.nz, vertex.ny)
 
-        scene = bpy.context.scene
-        scene.collection.objects.link(obj)
+            root_mesh.normals_split_custom_set_from_vertices(normals)
+            root_mesh.use_auto_smooth = True
+
+            root_mesh.update()
+
+            colour_layer = root_mesh.vertex_colors.new(name="Col")
+
+            for poly in root_mesh.polygons:
+                for loop_index in poly.loop_indices:
+                    vertex_index = root_mesh.loops[loop_index].vertex_index
+
+                    colour_layer.data[loop_index].color = vertices_local[vertex_index].r / 255, vertices_local[
+                        vertex_index].g / 255, vertices_local[vertex_index].b / 255, vertices_local[
+                                                              vertex_index].a / 255
+
+            obj = bpy.data.objects.new(root_mesh.name, root_mesh)
+
+            scene = bpy.context.scene
+            scene.collection.objects.link(obj)
 
     @staticmethod
     def import_mesh(context, filepath: str) -> None:
         print(f"Importing {filepath}")
-        vertices, faces = ImportStormworksMesh.read_mesh(filepath)
+        vertices, faces, submeshes = ImportStormworksMesh.read_mesh(filepath)
         print(f"Finished Importing")
 
-        ImportStormworksMesh.add_mesh("Imported Mesh", vertices, faces)
+        ImportStormworksMesh.add_mesh("Imported Mesh", vertices, faces, submeshes)
 
     def execute(self, context) -> Set[str]:
         ImportStormworksMesh.import_mesh(context, self.filepath)
